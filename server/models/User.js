@@ -1,41 +1,25 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
-// Structure
 const userSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: true,
-    trim: true
-  },
-  email: {
-    type: String,
-    required: true,
-    unique: true, 
-    lowercase: true,
-    trim: true
-  },
-  gridHash: {
-    type: String,
-    required: true // scrambled version of their crafting grid
-  }
-}, { timestamps: true }); // Automatically add 'createdAt' and 'updatedAt'
+  name: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
+  passwordHash: { type: String, required: true } 
+}, { timestamps: true });
 
-// PROCESS (Pre-save)
-// Intercepts the data right BEFORE it saves to the database.
+// Hash the password before saving to the database
 userSchema.pre('save', async function() {
-  const user = this;
-
-  if (!user.isModified('gridHash')) return;
+  // If the password hasn't been changed, just exit the function
+  if (!this.isModified('passwordHash')) return;
   
+  // Generate the salt and hash the password natively
   const salt = await bcrypt.genSalt(10);
-  user.gridHash = await bcrypt.hash(user.gridHash, salt);
+  this.passwordHash = await bcrypt.hash(this.passwordHash, salt);
 });
 
-// Verification
-// Will be used during login to check if their grid matches the hash
-userSchema.methods.compareGrid = async function(candidateGridString) {
-  return bcrypt.compare(candidateGridString, this.gridHash);
+// Compare standard passwords
+userSchema.methods.comparePassword = async function(candidatePassword) {
+  return await bcrypt.compare(candidatePassword, this.passwordHash);
 };
 
 module.exports = mongoose.model('User', userSchema);

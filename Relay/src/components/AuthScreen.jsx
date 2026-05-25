@@ -2,34 +2,43 @@ import React from 'react';
 import './AuthScreen.css';
 import GlowOrbs from './GlowOrb'; 
 
-const AuthScreen = ({ title, subtitle, formInputs, toolbox, gridZone }) => {
+// Notice I changed 'gridZone' to 'buttonZone'
+const AuthScreen = ({ title, subtitle, formInputs, buttonZone }) => {
   return (
     <div className="auth-container">
       <GlowOrbs />
 
-      <div className="auth-content">
+      <div className="auth-content" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%' }}>
         
-        {/* Left Side: Typography and Dynamic Inputs */}
-        <div className="text-section">
-          {/* These are now injected by App.js */}
-          <h1>{title}</h1>
-          <p>{subtitle}</p>
+        {/* The New Centered Login Box */}
+        <div 
+          className="text-section" 
+          style={{ 
+            backgroundColor: '#111111b2', 
+            padding: '3rem', 
+            borderRadius: '12px', 
+            border: '1px solid #333', 
+            display: 'flex', 
+            flexDirection: 'column', 
+            alignItems: 'center', 
+            maxWidth: '450px', 
+            width: '100%',
+            zIndex: 10 
+          }}
+        >
+          <h1 style={{ marginBottom: '0.5rem', textAlign: 'center' }}>{title}</h1>
+          <p style={{ color: '#888', marginBottom: '2rem', textAlign: 'center' }}>{subtitle}</p>
           
-          <div className="form-inputs-wrapper" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%', maxWidth: '400px' }}>
+          {/* The Inputs (Name, Email, Password) */}
+          <div className="form-inputs-wrapper" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%' }}>
             {formInputs}
           </div>
 
-          <div className="toolbox-wrapper" style={{ marginTop: '2rem' }}>
-             <p style={{ color: '#888', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
-               Craft your authentication key:
-             </p>
-             {toolbox}
+          {/* The Login/Register Button and Toggle Text */}
+          <div style={{ marginTop: '2rem', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            {buttonZone}
           </div>
-        </div>
 
-        {/* Right Side: The Grid and Buttons */}
-        <div className="grid-section">
-           {gridZone}
         </div>
 
       </div>
