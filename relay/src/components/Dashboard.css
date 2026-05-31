@@ -1,4 +1,4 @@
-.nav-link {
+/* .nav-link {
   cursor: pointer;
   color: #888;
   text-decoration: none;
@@ -34,4 +34,306 @@
 
 .note-card.active-card {
   border-color: #fff;
+} */
+
+.dashboard-layout {
+  min-height: 100vh;
+  background-color: #000000;
+  color: #fff;
+}
+
+.dashboard-content {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+/* Form Section */
+.form-section {
+  /* Translucent glass */
+  background-color: rgba(22, 22, 22, 0.6); 
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  
+  border-radius: 12px;
+  padding: 2rem;
+  margin-bottom: 3rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid #333;
+  padding-bottom: 1rem;
+}
+
+.section-header h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: #fff;
+}
+
+.branch-tag {
+  background-color: #222;
+  color: #888;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  border: 1px solid #444;
+}
+
+.issue-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* Splits the row into perfect, equal halves */
+  gap: 1.5rem;
+  align-items: end; /* Bottom-aligns inputs in case label text wraps to two lines */
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.input-group label {
+  font-size: 0.9rem;
+  color: #aaa;
+  font-weight: 500;
+}
+
+.input-group input, 
+.input-group select, 
+.input-group textarea {
+  background-color: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #fff;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+
+.input-group input:focus, 
+.input-group select:focus, 
+.input-group textarea:focus {
+  outline: none;
+  background-color: rgba(0, 0, 0, 0.8);
+  border-color: #888;
+}
+
+/* Radio Button Group Styling */
+.radio-group {
+  display: flex;
+  flex-wrap: wrap; /* Prevents overlapping on medium screens */
+  gap: 1.5rem;
+  align-items: center;
+  height: 100%;
+  min-height: 46px; /* Forces it to match the height of the standard text inputs */
+  padding: 8px 12px;
+  background-color: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+}
+
+.radio-group label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #fff !important;
+  font-weight: normal !important;
+  cursor: pointer;
+  font-size: 0.95rem !important;
+  margin: 0;
+}
+
+.radio-group input[type="radio"] {
+  accent-color: #4ade80;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  margin: 0;
+  padding: 0;
+  background-color: transparent;
+  border: none;
+}
+
+.submit-issue-btn {
+  background-color: #fff;
+  color: #000;
+  border: none;
+  padding: 14px;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 1rem;
+  transition: background-color 0.2s;
+}
+
+.submit-issue-btn:hover {
+  background-color: #ddd;
+}
+
+.submit-issue-btn:disabled {
+  background-color: #555;
+  color: #888;
+  cursor: not-allowed;
+}
+
+/* Historical Feed Section */
+.feed-title {
+  font-size: 1.2rem;
+  margin-bottom: 1.5rem;
+  color: #fff;
+}
+
+.fault-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.empty-state {
+  color: #666;
+  font-style: italic;
+  text-align: center;
+  padding: 2rem;
+  background-color: #1a1a1a;
+  border-radius: 8px;
+}
+
+.fault-card {
+  /* Translucent glass */
+  background-color: rgba(26, 26, 26, 0.6); 
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  
+  border-radius: 8px;
+  padding: 1.5rem;
+  transition: transform 0.2s;
+}
+
+.fault-card:hover {
+  border-color: #555;
+}
+
+.fault-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.status-badge {
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.status-badge.open { background-color: rgba(255, 77, 77, 0.2); color: #ff4d4d; border: 1px solid #ff4d4d; }
+.status-badge.in-progress { background-color: rgba(255, 165, 0, 0.2); color: #ffa500; border: 1px solid #ffa500; }
+.status-badge.resolved { background-color: rgba(74, 222, 128, 0.2); color: #4ade80; border: 1px solid #4ade80; }
+
+.timestamp {
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.equipment-title {
+  margin: 0 0 8px 0;
+  font-size: 1.2rem;
+  color: #fff;
+}
+
+.fault-desc {
+  margin: 0;
+  color: #bbb;
+  line-height: 1.5;
+  font-size: 0.95rem;
+}
+
+.fault-card-footer {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #333;
+}
+
+.priority-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: #888;
+}
+
+.priority-indicator .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.priority-indicator.critical .dot { background-color: #ff0000; box-shadow: 0 0 8px #ff0000; }
+.priority-indicator.high .dot { background-color: #ff4d4d; }
+.priority-indicator.medium .dot { background-color: #ffa500; }
+.priority-indicator.low .dot { background-color: #4ade80; }
+
+/* --- RESPONSIVE MOBILE BREAKPOINT --- */
+@media (max-width: 768px) {
+  
+  /* Collapse the 2-column grid into a single vertical column */
+  .form-row {
+    grid-template-columns: 1fr; 
+    gap: 1rem;
+  }
+
+  /* Shrink the outer padding so the form utilizes more screen space on phones */
+  .dashboard-content {
+    padding: 1rem;
+  }
+
+  .form-section {
+    padding: 1.5rem;
+  }
+
+  .relay-navbar {
+    padding: 1rem;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .nav-links {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .nav-divider {
+    display: none; /* Hide the vertical line on mobile */
+  }
+}
+
+/* Unhide and style the native browser calendar icon */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) brightness(100%);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  background-color: rgba(255, 255, 255, 0.2);
 }

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AuthScreen from '../components/AuthScreen';
 import TransitionScreen from '../components/TransitionScreen';
+import './AuthFlow.css'; // Importing the clean CSS definitions
 
 const AuthFlow = () => {
   const navigate = useNavigate();
@@ -12,6 +13,9 @@ const AuthFlow = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  const [surname, setSurname] = useState('');
+  const [branch, setBranch] = useState('');
+  const [role, setRole] = useState('');
 
   const [serverMessage, setServerMessage] = useState('');
   const [isError, setIsError] = useState(false);
@@ -50,7 +54,7 @@ const AuthFlow = () => {
       const response = await fetch('http://localhost:5000/api/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password })
+        body: JSON.stringify({ name, surname, email, password, branch, role })
       });
       const data = await response.json();
       if (response.ok) handleAuthSuccess(data);
@@ -77,31 +81,56 @@ const AuthFlow = () => {
       formInputs={
         <>
           {authMode === 'register' && (
-            <input
-              type="text"
-              placeholder="Enter your name"
-              style={{ width: '100%', backgroundColor: '#000', color: '#fff', border: '1px solid #555', borderRadius: '8px', padding: '12px 14px', fontSize: '1rem', outline: 'none' }}
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
+            <>
+              <div className="auth-input-row">
+                <input
+                  type="text" placeholder="First Name" className="auth-input-field"
+                  value={name} onChange={(e) => setName(e.target.value)}
+                />
+                <input
+                  type="text" placeholder="Surname" className="auth-input-field"
+                  value={surname} onChange={(e) => setSurname(e.target.value)}
+                />
+              </div>
+
+              <select className="auth-input-field" value={branch} onChange={(e) => setBranch(e.target.value)}>
+                <option value="" disabled>Select Branch</option>
+                <option value="Rosslyn Brewery">Rosslyn Brewery (Pretoria)</option>
+                <option value="Alrode Brewery">Alrode Brewery (Johannesburg)</option>
+                <option value="Chamdor Brewery">Chamdor Brewery (Krugersdorp)</option>
+                <option value="Newlands Brewery">Newlands Brewery (Cape Town)</option>
+                <option value="Prospecton Brewery">Prospecton Brewery (Durban)</option>
+                <option value="Ibhayi Brewery">Ibhayi Brewery (Gqeberha)</option>
+                <option value="Polokwane Brewery">Polokwane Brewery (Limpopo)</option>
+              </select>
+
+              <select className="auth-input-field" value={role} onChange={(e) => setRole(e.target.value)}>
+                <option value="" disabled>Select Operational Role</option>
+                <option value="Operator">Operator</option>
+                <option value="Artisan">Artisan</option>
+                <option value="Team Leader">Team Leader</option>
+                <option value="Maintenance controller">Maintenance controller</option>
+                <option value="Engineer">Engineer</option>
+                <option value="Maintenance planner">Maintenance planner</option>
+                <option value="Packaging manager">Packaging manager</option>
+                <option value="Machine specialist">Machine specialist</option>
+                <option value="Process artisan">Process artisan</option>
+                <option value="Process operator">Process operator</option>
+              </select>
+            </>
           )}
+
           <input
-            type="email"
-            placeholder="Enter your email"
-            style={{ width: '100%', backgroundColor: '#000', color: '#fff', border: '1px solid #555', borderRadius: '8px', padding: '12px 14px', fontSize: '1rem', outline: 'none', marginTop: '10px' }}
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            type="email" placeholder="Email Address" className="auth-input-field"
+            value={email} onChange={(e) => setEmail(e.target.value)}
           />
           <input
-            type="password"
-            placeholder="Enter your password"
-            style={{ width: '100%', backgroundColor: '#000', color: '#fff', border: '1px solid #555', borderRadius: '8px', padding: '12px 14px', fontSize: '1rem', outline: 'none', marginTop: '10px' }}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            type="password" placeholder="Password" className="auth-input-field"
+            value={password} onChange={(e) => setPassword(e.target.value)}
           />
 
           {serverMessage && (
-            <div style={{ marginTop: '1rem', color: isError ? '#ff4d4d' : '#4ade80', textAlign: 'center' }}>
+            <div className={`server-message ${isError ? 'error' : 'success'}`}>
               {serverMessage}
             </div>
           )}
@@ -109,10 +138,7 @@ const AuthFlow = () => {
       }
       buttonZone={
         <>
-          <button
-            onClick={handleSubmit}
-            style={{ width: '100%', background: '#fff', color: '#000', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer', marginBottom: '1rem' }}
-          >
+          <button onClick={handleSubmit} className="auth-submit-btn">
             {authMode === 'login' ? 'Login' : 'Register'}
           </button>
           <button
@@ -120,7 +146,7 @@ const AuthFlow = () => {
               setAuthMode(authMode === 'login' ? 'register' : 'login');
               setServerMessage('');
             }}
-            style={{ background: 'transparent', color: '#888', border: 'none', textDecoration: 'underline', cursor: 'pointer' }}
+            className="auth-toggle-btn"
           >
             {authMode === 'login' ? "Don't have an account? Register instead." : "Already have an account? Login here."}
           </button>

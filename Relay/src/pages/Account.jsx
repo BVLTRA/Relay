@@ -1,150 +1,121 @@
-import React, { useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import GlowOrbs from "../components/GlowOrb";
-import { useNotes } from "../hooks/useNotes"; 
-
-import '../components/Dashboard.css'; 
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import Navbar from '../components/Navbar';
+import GlowOrbs from '../components/GlowOrb';
 import './Account.css';
 
 const Account = () => {
   const navigate = useNavigate();
-  const location = useLocation();
+  const token = localStorage.getItem('gridlock_token');
   
-  const [currentUser, setCurrentUser] = useState(location.state?.user || { name: "Explorer", email: "..." });
+  // Pull the operator's data from local storage
+  const [user, setUser] = useState(JSON.parse(localStorage.getItem('gridlock_user')));
+  const [stats, setStats] = useState({ total: 0, open: 0, resolved: 0 });
+  const [isLoading, setIsLoading] = useState(true);
 
-  const [isEditingName, setIsEditingName] = useState(false);
-  const [editNameValue, setEditNameValue] = useState(currentUser.name);
+  useEffect(() => {
+    if (!token || !user) {
+      navigate('/');
+      return;
+    }
+    fetchOperatorStats();
+    // eslint-disable-next-line
+  }, []);
 
-  const { notes } = useNotes();
-
-  const handleLogout = () => {
-    localStorage.removeItem("gridlock_token");
-    navigate("/");
-  };
-
-  const handleSaveName = async () => {
-    if (!editNameValue.trim()) return;
-    
-    const token = localStorage.getItem("gridlock_token");
+  const fetchOperatorStats = async () => {
     try {
-      const response = await fetch("http://localhost:5000/api/user/name", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ name: editNameValue })
+      // Hit the vault to get only this specific user's faults
+      const response = await fetch('http://localhost:5000/api/faults', {
+        headers: { 'Authorization': `Bearer ${token}` }
       });
       
-      const data = await response.json();
       if (response.ok) {
-        setCurrentUser(data.user); 
-        setIsEditingName(false);
+        const data = await response.json();
+        
+        // Calculate the metrics
+        const total = data.length;
+        const open = data.filter(f => f.status === 'Open' || f.status === 'In Progress').length;
+        const resolved = data.filter(f => f.status === 'Resolved').length;
+        
+        setStats({ total, open, resolved });
       }
-    } catch (err) {
-      console.error("Failed to update name");
+    } catch (error) {
+      console.error('Failed to pull statistics.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
     <div className="account-layout">
       <GlowOrbs />
-
-      <div className="account-foreground">
-        
-        {/* THE NAVBAR */}
-        <nav className="account-navbar">
-          <div className="nav-brand">
-            GRIDLOCK // NOTEBOOK
-          </div>
-          <div className="nav-menu">
-            <span 
-              className="nav-link" 
-              onClick={() => navigate("/dashboard", { state: { user: currentUser } })}
-            >
-              Notes
-            </span>
-            <span className="nav-link active">
-              Account
-            </span>
-            <span className="nav-link">
-              About this project
-            </span>
-
-            <button onClick={handleLogout} className="nav-logout-btn">
-              Logout
-            </button>
-          </div>
-        </nav>
-
-        {/* ACCOUNT CONTENT */}
-        <main className="account-main">
-          <h2 className="account-heading">
-            Account Details
-          </h2>
-
-          <div className="account-card">
+      <Navbar user={user} />
+      
+      <main className="account-content">
+        <div className="profile-grid">
+          
+          {/* Left Column: The Operator Identity Card */}
+          <section className="identity-card glass-panel">
+            <div className="avatar-ring">
+              <div className="avatar-initials">
+                {user?.name?.[0]}{user?.surname?.[0]}
+              </div>
+            </div>
             
-            {/* Name Block */}
-            <div className="form-section">
-              <label className="field-label">Display Name</label>
-              {isEditingName ? (
-                <div className="edit-wrapper">
-                  <input
-                    type="text"
-                    value={editNameValue}
-                    onChange={(e) => setEditNameValue(e.target.value)}
-                    className="edit-input"
-                    autoFocus
-                  />
-                  <button onClick={handleSaveName} className="btn-primary">Save</button>
-                  <button 
-                    onClick={() => { setIsEditingName(false); setEditNameValue(currentUser.name); }} 
-                    className="btn-secondary"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              ) : (
-                <div className="display-wrapper">
-                  <span className="display-name">{currentUser.name}</span>
-                  <button onClick={() => setIsEditingName(true)} className="btn-text">
-                    Edit Name
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Email Block */}
-            <div className="form-section-spaced">
-              <label className="field-label">Email Address</label>
-              <div className="display-email">{currentUser.email}</div>
-            </div>
-
-            {/* Data Stats Block */}
-            <div className="stats-container">
-              <div>
-                <label className="field-label">Total Notes</label>
-                <div className="stat-large">{notes.length}</div>
+            <h2 className="operator-name">{user?.name} {user?.surname}</h2>
+            <div className="role-badge">{user?.role}</div>
+            
+            <div className="details-list">
+              <div className="detail-item">
+                <span className="detail-label">Assigned Branch</span>
+                <span className="detail-value">{user?.branch}</span>
               </div>
-              <div>
-                <label className="field-label">Member Since</label>
-                <div className="stat-medium">
-                  {currentUser.createdAt 
-                    ? new Date(currentUser.createdAt).toLocaleDateString(undefined, { month: 'long', year: 'numeric' }) 
-                    : "Just now"}
-                </div>
+              <div className="detail-item">
+                <span className="detail-label">Email Clearance</span>
+                <span className="detail-value">{user?.email}</span>
               </div>
-              <div>
-                <label className="field-label">Last Profile Update</label>
-                <div className="stat-medium">
-                  {currentUser.updatedAt 
-                    ? new Date(currentUser.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) 
-                    : "No updates"}
-                </div>
+              <div className="detail-item">
+                <span className="detail-label">Account Status</span>
+                <span className="detail-value status-active">Active</span>
               </div>
             </div>
+          </section>
 
-          </div>
-        </main>
-      </div>
+          {/* Right Column: The Performance Telemetry */}
+          <section className="telemetry-section">
+            <h3 className="telemetry-header">Operator Telemetry</h3>
+            
+            {isLoading ? (
+              <div className="loading-state">Syncing vault data...</div>
+            ) : (
+              <div className="stats-grid">
+                <div className="stat-card glass-panel">
+                  <span className="stat-value">{stats.total}</span>
+                  <span className="stat-label">Total Faults Logged</span>
+                </div>
+                
+                <div className="stat-card glass-panel warning-tint">
+                  <span className="stat-value">{stats.open}</span>
+                  <span className="stat-label">Active / Pending</span>
+                </div>
+                
+                <div className="stat-card glass-panel success-tint">
+                  <span className="stat-value">{stats.resolved}</span>
+                  <span className="stat-label">Issues Resolved</span>
+                </div>
+              </div>
+            )}
+
+            <div className="system-info glass-panel">
+              <h4>System Information</h4>
+              <p>BVLTRA Relay v1.0.4</p>
+              <p>Connected to MongoDB Atlas Vault.</p>
+              <p>Session encrypted via JWT Bearer Token.</p>
+            </div>
+          </section>
+
+        </div>
+      </main>
     </div>
   );
 };

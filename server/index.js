@@ -4,9 +4,9 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 
-// Import blueprints
+// Blueprints
 const User = require('./models/User');
-const Fault = require('./models/Fault'); 
+const Fault = require('./models/Fault');
 const auth = require('./middleware/auth');
 
 const app = express();
@@ -23,10 +23,10 @@ mongoose.connect(uri)
 
 app.post('/api/register', async (req, res) => {
   try {
-    const { name, email, password } = req.body; 
+    const { name, surname, email, password, branch, role } = req.body;
 
-    if (!name || !email || !password) {
-      return res.status(400).json({ error: 'Name, email, and password are required.' });
+    if (!name || !surname || !email || !password || !branch || !role) {
+      return res.status(400).json({ error: 'All fields are required.' });
     }
 
     const existingUser = await User.findOne({ email });
@@ -34,14 +34,20 @@ app.post('/api/register', async (req, res) => {
       return res.status(400).json({ error: 'Email already registered.' });
     }
 
-    const newUser = new User({ name, email, passwordHash: password });
+    const newUser = new User({ name, surname, email, passwordHash: password, branch, role });
     await newUser.save();
 
     const token = jwt.sign({ userId: newUser._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
     res.status(201).json({
       message: 'Account created successfully!',
-      user: { name: newUser.name, email: newUser.email, createdAt: newUser.createdAt, updatedAt: newUser.updatedAt },
+      user: { 
+        name: newUser.name, 
+        surname: newUser.surname, 
+        email: newUser.email, 
+        branch: newUser.branch, 
+        role: newUser.role 
+      },
       token: token 
     });
   } catch (error) {
@@ -54,25 +60,24 @@ app.post('/api/login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password are required.' });
-    }
-
     const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(401).json({ error: 'Invalid email or password.' });
-    }
+    if (!user) return res.status(401).json({ error: 'Invalid email or password.' });
 
-    const isMatch = await user.comparePassword(password); // Standard password check
-    if (!isMatch) {
-      return res.status(401).json({ error: 'Invalid email or password.' });
-    }
+    const isMatch = await user.comparePassword(password); 
+    if (!isMatch) return res.status(401).json({ error: 'Invalid email or password.' });
 
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
     res.status(200).json({
       message: 'Authentication successful!',
-      user: { name: user.name, email: user.email, createdAt: user.createdAt, updatedAt: user.updatedAt },
+      user: { 
+        name: user.name, 
+        surname: user.surname, 
+        email: user.email, 
+        branch: user.branch, 
+        role: user.role, 
+        createdAt: user.createdAt 
+      },
       token: token 
     });
   } catch (error) {
@@ -81,22 +86,8 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
-// UPDATE PROFILE
-app.put('/api/user/name', auth, async (req, res) => {
-  try {
-    const { name } = req.body;
-    if (!name) return res.status(400).json({ error: 'Name cannot be empty.' });
+// --- FAULT LOGGING ROUTES ---
 
-    const updatedUser = await User.findByIdAndUpdate(req.user.userId, { name: name }, { new: true });
-    res.status(200).json({ message: 'Profile updated.', user: updatedUser });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to update profile.' });
-  }
-});
-
-// --- FAULT LOGGING ROUTES (Replaced Notes) ---
-
-// FETCH ALL FAULTS
 app.get('/api/faults', auth, async (req, res) => {
   try {
     const faults = await Fault.find({ userId: req.user.userId }).sort({ updatedAt: -1 });
@@ -106,39 +97,27 @@ app.get('/api/faults', auth, async (req, res) => {
   }
 });
 
-// CREATE NEW FAULT
 app.post('/api/faults', auth, async (req, res) => {
   try {
-    const { equipment, description, priority } = req.body;
+    const { equipment, description, priority, shift, area, dateRaised, tagType, actionToBeTaken } = req.body;
 
     const newFault = new Fault({
       userId: req.user.userId,
       equipment: equipment || 'Unknown Equipment',
       description: description || 'No description provided',
-      priority: priority || 'Medium'
+      priority: priority || 'Medium',
+      shift,
+      area,
+      dateRaised,
+      tagType,
+      actionToBeTaken
     });
 
     await newFault.save();
     res.status(201).json(newFault);
   } catch (error) {
+    console.error("🔥 CRASH REPORT:", error);
     res.status(500).json({ error: 'Failed to log fault.' });
-  }
-});
-
-// UPDATE EXISTING FAULT
-app.put('/api/faults/:id', auth, async (req, res) => {
-  try {
-    const { equipment, description, status, priority } = req.body;
-
-    const updatedFault = await Fault.findOneAndUpdate(
-      { _id: req.params.id, userId: req.user.userId },
-      { equipment, description, status, priority },
-      { new: true } 
-    );
-
-    res.status(200).json(updatedFault);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to update fault.' });
   }
 });
 
