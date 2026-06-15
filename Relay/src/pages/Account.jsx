@@ -25,7 +25,7 @@ const Account = () => {
   const fetchOperatorStats = async () => {
     try {
       // Hit the vault to get only this specific user's faults
-      const response = await fetch('http://localhost:5000/api/faults', {
+      const response = await fetch('https://relay-rsqr.onrender.com/api/faults', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
