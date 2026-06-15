@@ -127,9 +127,9 @@ const Dashboard = () => {
                   value={equipment} onChange={(e) => setEquipment(e.target.value)} required
                 />
               </div>
-              <div className="input-group">
+              <div className="input-group date-group">
                 <label>Date Raised</label>
-                <input 
+                <input className="date-input"
                   type="date" value={dateRaised} 
                   onChange={(e) => setDateRaised(e.target.value)} required
                 />
