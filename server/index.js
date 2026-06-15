@@ -3,7 +3,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
-
+const multer = require('multer');
 // Blueprints
 const User = require('./models/User');
 const Fault = require('./models/Fault');
@@ -14,6 +14,34 @@ app.use(cors());
 app.use(express.json());
 
 const uri = process.env.MONGO_URI;
+
+const uploadDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadDir)){
+    fs.mkdirSync(uploadDir);
+}
+
+// Configure Multer storage engine
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/') // Save to the uploads folder
+  },
+  filename: function (req, file, cb) {
+    // Rename file to prevent overwriting (timestamp + original extension)
+    cb(null, Date.now() + '-' + Math.round(Math.random() * 1E9) + path.extname(file.originalname))
+  }
+});
+const upload = multer({ storage: storage });
+
+const User = require('./models/User');
+const Fault = require('./models/Fault');
+const auth = require('./middleware/auth');
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+// Expose upload folder so the frontend can request the images
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 mongoose.connect(uri)
   .then(() => console.log('✅ Connected to the Vault (MongoDB)'))
@@ -92,25 +120,30 @@ app.get('/api/faults', auth, async (req, res) => {
   try {
     const faults = await Fault.find({ userId: req.user.userId }).sort({ updatedAt: -1 });
     res.status(200).json(faults);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch faults.' });
+  } catch (error) { 
+    res.status(500).json({ error: 'Failed to fetch faults.' }); 
   }
 });
 
-app.post('/api/faults', auth, async (req, res) => {
+app.post('/api/faults', auth, upload.single('image'), async (req, res) => {
   try {
     const { equipment, description, priority, shift, area, dateRaised, tagType, actionToBeTaken } = req.body;
+    
+    // If a file was uploaded, save its local path
+    const imageUrl = req.file ? `/uploads/${req.file.filename}` : '';
 
     const newFault = new Fault({
-      userId: req.user.userId,
-      equipment: equipment || 'Unknown Equipment',
-      description: description || 'No description provided',
-      priority: priority || 'Medium',
-      shift,
-      area,
-      dateRaised,
-      tagType,
-      actionToBeTaken
+      userId: 
+      req.user.userId, 
+      equipment, 
+      description, 
+      priority, 
+      shift, 
+      area, 
+      dateRaised, 
+      tagType, 
+      actionToBeTaken, 
+      imageUrl
     });
 
     await newFault.save();

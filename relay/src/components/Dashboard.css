@@ -341,3 +341,77 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 input[type="date"]::-webkit-calendar-picker-indicator:hover {
   background-color: rgba(255, 255, 255, 0.2);
 }
+
+/* --- Drag and Drop Image Zone --- */
+.drop-zone {
+  border: 2px dashed rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  background-color: rgba(0, 0, 0, 0.4);
+  padding: 2rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.drop-zone:hover, .drop-zone.drag-active {
+  border-color: #4ade80;
+  background-color: rgba(74, 222, 128, 0.05);
+}
+
+.drop-zone-content p {
+  margin: 4px 0;
+  color: #aaa;
+}
+
+.drop-zone-content strong {
+  color: #fff;
+  text-decoration: underline;
+}
+
+/* --- Image Preview Before Submission --- */
+.image-preview-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 1rem;
+  background-color: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+}
+
+.image-preview {
+  max-width: 100%;
+  max-height: 300px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+.remove-image-btn {
+  background: transparent;
+  border: 1px solid #ff4d4d;
+  color: #ff4d4d;
+  padding: 6px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.remove-image-btn:hover {
+  background: #ff4d4d;
+  color: #fff;
+}
+
+.feed-image-container {
+  margin-top: 1rem;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.feed-image {
+  width: 100%;
+  max-height: 400px;
+  object-fit: cover;
+  display: block;
+}

@@ -6,13 +6,12 @@ const faultSchema = new mongoose.Schema({
   description: { type: String, required: true },
   status: { type: String, default: 'Open' },
   priority: { type: String, default: 'Medium' },
-  
-  // Physical Tag Fields
   shift: { type: String, required: true },
   area: { type: String, required: true },
   dateRaised: { type: Date, required: true },
   tagType: { type: String, required: true },
-  actionToBeTaken: { type: String } // Optional field
+  actionToBeTaken: { type: String },
+  imageUrl: { type: String, default: '' } 
 }, { timestamps: true });
 
 module.exports = mongoose.model('Fault', faultSchema);
