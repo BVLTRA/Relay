@@ -1,5 +1,5 @@
 # RELAY // Operational Fault Logging & Team Communication
-<img src="relay/src/assets/images/cover.svg" alt="Header image" width="100%" height="auto">
+<img src="relay/src/assets/images/cover.png" alt="Header image" width="100%" height="auto">
 Under construction - An operational fault-logging and communication handoff system for teams that prioritizes real-time visibility, structured incident response, and seamless team collaboration. Designed for the South African Brewery.
 
 ## Description
