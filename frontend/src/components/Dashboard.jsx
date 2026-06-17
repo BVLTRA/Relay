@@ -37,7 +37,7 @@ const Dashboard = () => {
   }, []);
   const fetchFaults = async () => {
     try {
-      const response = await fetch("https://relay-4zsg13kdx-bvltras-projects.vercel.app/api/faults", {
+      const response = await fetch("https://relay-blond-nine.vercel.app/api/faults", {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (response.ok) {
@@ -102,7 +102,7 @@ const Dashboard = () => {
     if (imageFile) formData.append("image", imageFile);
 
     try {
-      const response = await fetch("https://relay-4zsg13kdx-bvltras-projects.vercel.app/api/faults", {
+      const response = await fetch("https://relay-blond-nine.vercel.app/api/faults", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
