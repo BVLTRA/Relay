@@ -101,5 +101,11 @@ app.post('/api/faults', auth, upload.single('image'), async (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`🚀 Server listening on port ${PORT}`));
+// Local Development: Run as a standard server
+if (process.env.NODE_ENV !== 'production') {
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => console.log(`🚀 Local server listening on port ${PORT}`));
+}
+
+// Vercel Production: Export the app as a serverless function
+module.exports = app;
