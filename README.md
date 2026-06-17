@@ -1,5 +1,5 @@
 # RELAY // Operational Fault Logging & Team Communication
-<img src="frontend/src/assets/images/cover.png" alt="Header image" width="100%" height="auto">
+<img src="frontend/public/images/cover.png" alt="Header image" width="100%" height="auto">
 Under construction - An operational fault-logging and communication handoff system for teams that prioritizes real-time visibility, structured incident response, and seamless team collaboration. Designed for the South African Brewery.
 
 ## Description
@@ -21,11 +21,11 @@ The platform leverages modern web technologies to deliver a responsive, interact
 *A detailed fault view including telemetry payload, severity metadata, assigned owner, and comment thread.*
 
 ### Team Management
-![Team Members](./public/images/team-members.png)
+![Team Members](frontend/public/images/uehhfjhyf.png)
 *The team management interface showing members, roles, and permission levels.*
 
 ### Report Form
-![Report Form](./public/images/report-form.png)
+![Report Form](frontend/public/images/report-form.png)
 *The fault report form with fields for title, description, severity, device selection, and file attachments.*
 
 ---
