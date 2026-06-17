@@ -35,7 +35,7 @@ const AuthFlow = () => {
 
   const handleLogin = async () => {
     try {
-      const response = await fetch('https://relay-rsqr.onrender.com/api/login', {
+      const response = await fetch('https://relay-bvltras-projects.vercel.app/https://relay-bvltras-projects.vercel.app//api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
@@ -51,7 +51,7 @@ const AuthFlow = () => {
 
   const handleRegister = async () => {
     try {
-      const response = await fetch('https://relay-rsqr.onrender.com/api/register', {
+      const response = await fetch('https://relay-bvltras-projects.vercel.app//api/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, surname, email, password, branch, role })
