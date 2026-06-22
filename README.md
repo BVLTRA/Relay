@@ -481,4 +481,4 @@ This project is licensed under the [MIT License](https://opensource.org/licenses
 
 ---
 
-**Questions or feedback?** [Open an issue](https://github.com/BVLTRA/bvltra-relay/issues) or reach out to the maintainers.
+**Questions or feedback?** [Open an issue](https://github.com/BVLTRA/relay/issues) or reach out to the maintainers.
