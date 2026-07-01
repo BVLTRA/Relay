@@ -1,445 +1,574 @@
-import React, { useState, useEffect, useRef } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import Navbar from "./Navbar";
+import React, { useState, useEffect } from "react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+} from "recharts";
 import GlowOrbs from "./GlowOrb";
+import IssueCard from "./IssueCard";
 import "./Dashboard.css";
+import logo from "../assets/images/logo.svg"; // Assuming you have a logo in the assets folder
+
+// --- MOCK DATA ---
+const statusData = [
+  { name: "New", count: 14 },
+  { name: "Assigned", count: 8 },
+  { name: "In Progress", count: 22 },
+  { name: "Resolved", count: 35 },
+  { name: "Closed", count: 42 },
+];
+
+// --- MOCK DATA ---
+const mockIssues = [
+  {
+    id: "BV-092",
+    title: "Conveyor belt 3 motor overheating",
+    status: "New",
+    severity: "Critical",
+    createdAt: new Date(Date.now() - 3600000).toISOString(),
+  }, // 1 hour ago
+  {
+    id: "BV-091",
+    title: "Calibration error on filler head A",
+    status: "Assigned",
+    severity: "High",
+    createdAt: new Date(Date.now() - 86400000).toISOString(),
+  }, // 1 day ago
+  {
+    id: "BV-090",
+    title: "Palletizer sensor out of alignment",
+    status: "In Progress",
+    severity: "Medium",
+    createdAt: new Date(Date.now() - 172800000).toISOString(),
+  }, // 2 days ago
+  {
+    id: "BV-089",
+    title: "Routine lubrication required for line 2",
+    status: "New",
+    severity: "Low",
+    createdAt: new Date(Date.now() - 14400000).toISOString(),
+  }, // 4 hours ago
+  {
+    id: "BV-088",
+    title: "Valve casing leak on fermentation tank",
+    status: "Resolved",
+    severity: "High",
+    createdAt: new Date(Date.now() - 432000000).toISOString(),
+  }, // 5 days ago
+];
+
+const statuses = ["New", "Assigned", "In Progress", "Resolved", "Closed"];
+
+const severityData = [
+  { name: "Low", value: 40, patternId: "pattern-low" },
+  { name: "Medium", value: 30, patternId: "pattern-medium" },
+  { name: "High", value: 15, patternId: "pattern-high" },
+  { name: "Critical", value: 5, patternId: "pattern-critical" },
+];
+
+// A lightweight, hardware-synced counter
+const AnimatedCounter = ({ end, duration = 1500, className }) => {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    let startTime = null;
+
+    const animate = (currentTime) => {
+      if (!startTime) startTime = currentTime;
+
+      // Calculate how far along we are in the given duration (0.0 to 1.0)
+      const progress = Math.min((currentTime - startTime) / duration, 1);
+
+      // easeOutExpo function: Starts fast, applies heavy friction at the end
+      const ease = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
+
+      setCount(Math.floor(ease * end));
+
+      // Keep requesting frames until we hit 100% progress
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      }
+    };
+
+    requestAnimationFrame(animate);
+  }, [end, duration]);
+
+  return <span className={className}>{count}</span>;
+};
 
 const Dashboard = () => {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const user =
-    location.state?.user || JSON.parse(localStorage.getItem("gridlock_user"));
-  const token = localStorage.getItem("gridlock_token");
+  const [user, setUser] = useState(null);
+  const [viewMode, setViewMode] = useState("column"); // 'column' or 'list'
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const today = new Date().toISOString().split("T")[0];
+  const filteredIssues = mockIssues.filter(
+    (issue) =>
+      issue.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      issue.id.toLowerCase().includes(searchQuery.toLowerCase()),
+  );
 
-  const [faults, setFaults] = useState([]);
-  const [equipment, setEquipment] = useState("");
-  const [description, setDescription] = useState("");
-  const [priority, setPriority] = useState("Medium");
-  const [shift, setShift] = useState("");
-  const [area, setArea] = useState("");
-  const [dateRaised, setDateRaised] = useState(today);
-  const [tagType, setTagType] = useState("Mechanical");
-  const [actionToBeTaken, setActionToBeTaken] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // File Upload State
-  const [imageFile, setImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState("");
-  const [isDragging, setIsDragging] = useState(false);
-  const fileInputRef = useRef(null);
-
- useEffect(() => {
-    if (!token || !user) navigate('/');
-    else fetchFaults();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    const storedUser = localStorage.getItem("gridlock_user");
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
   }, []);
-  const fetchFaults = async () => {
-    try {
-      const response = await fetch("https://relay-blond-nine.vercel.app/api/faults", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setFaults(data);
-      }
-    } catch (error) {
-      console.error("Failed to fetch faults");
-    }
-  };
-
-  // --- Drag and Drop Handlers ---
-  const handleDragOver = (e) => {
-    e.preventDefault(); // Prevents browser from opening the file in a new tab
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = () => setIsDragging(false);
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    setIsDragging(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      handleFileSelection(e.dataTransfer.files[0]);
-    }
-  };
-
-  const handleFileInput = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      handleFileSelection(e.target.files[0]);
-    }
-  };
-
-  const handleFileSelection = (file) => {
-    if (!file.type.startsWith("image/")) return; // Ensure it's an image
-    setImageFile(file);
-    setImagePreview(URL.createObjectURL(file)); // Generate a temporary local preview URL
-  };
-
-  const clearImage = () => {
-    setImageFile(null);
-    setImagePreview("");
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  };
-
-  const handleSubmitIssue = async (e) => {
-    e.preventDefault();
-    if (!equipment || !description || !shift || !area) return;
-
-    setIsSubmitting(true);
-
-    // Build the multipart/form-data payload
-    const formData = new FormData();
-    formData.append("equipment", equipment);
-    formData.append("description", description);
-    formData.append("priority", priority);
-    formData.append("shift", shift);
-    formData.append("area", area);
-    formData.append("dateRaised", dateRaised);
-    formData.append("tagType", tagType);
-    formData.append("actionToBeTaken", actionToBeTaken);
-    if (imageFile) formData.append("image", imageFile);
-
-    try {
-      const response = await fetch("https://relay-blond-nine.vercel.app/api/faults", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          // DO NOT SET 'Content-Type'. The browser sets it automatically with the boundary for FormData.
-        },
-        body: formData,
-      });
-
-      if (response.ok) {
-        const newFault = await response.json();
-        setFaults([newFault, ...faults]);
-
-        // Reset form
-        setEquipment("");
-        setDescription("");
-        setShift("");
-        setArea("");
-        setActionToBeTaken("");
-        setPriority("Medium");
-        setTagType("Mechanical");
-        clearImage();
-      }
-    } catch (error) {
-      console.error("Failed to log issue");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   return (
     <div className="dashboard-layout">
       <GlowOrbs />
-      <Navbar user={user} />
 
-      <main
-        className="dashboard-content"
-        style={{ position: "relative", zIndex: 10 }}
-      >
-        <section className="form-section">
-          <div className="section-header">
-            <h3>Log a New Issue</h3>
-            <span className="branch-tag">
-              {user?.branch || "Unknown Branch"}
+      <aside className="sidebar">
+        <div className="sidebar-brand">
+          <img src={logo} alt="Relay Logo" className="brand-logo" height="15" />
+          <span className="brand-text">RELAY</span>
+        </div>
+
+        <nav className="sidebar-nav">
+          <button className="nav-item active">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+              <rect x="14" y="3" width="7" height="7" rx="1"></rect>
+              <rect x="14" y="14" width="7" height="7" rx="1"></rect>
+              <rect x="3" y="14" width="7" height="7" rx="1"></rect>
+            </svg>
+            Dashboard
+          </button>
+          <button className="nav-item">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            Report Issue
+          </button>
+          <button className="nav-item">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M8 2v4"></path>
+              <path d="M16 2v4"></path>
+              <rect x="4" y="8" width="16" height="14" rx="2"></rect>
+              <path d="M9 14h6"></path>
+              <path d="M9 18h6"></path>
+              <path d="M12 11v8"></path>
+            </svg>
+            All Reports
+          </button>
+          <button className="nav-item">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <line x1="18" y1="20" x2="18" y2="10"></line>
+              <line x1="12" y1="20" x2="12" y2="4"></line>
+              <line x1="6" y1="20" x2="6" y2="14"></line>
+            </svg>
+            Analytics
+          </button>
+          <button className="nav-item">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+            Settings
+          </button>
+        </nav>
+
+        <div className="sidebar-user">
+          <div className="user-avatar">{user ? user.name.charAt(0) : "U"}</div>
+          <div className="user-info">
+            <span className="user-name">
+              {user ? `${user.name} ${user.surname}` : "User"}
             </span>
           </div>
+          <button className="logout-icon">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+          </button>
+        </div>
+      </aside>
 
-          <form className="issue-form" onSubmit={handleSubmitIssue}>
-            <div className="form-row">
-              <div className="input-group">
-                <label>Area / Plant Section</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Packaging, Brew House"
-                  value={area}
-                  onChange={(e) => setArea(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="input-group">
-                <label>Shift</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Morning, Night, Shift A"
-                  value={shift}
-                  onChange={(e) => setShift(e.target.value)}
-                  required
-                />
-              </div>
+      <main className="main-viewport">
+        <header className="viewport-header">
+          <h1 className="current-page-title">Dashboard</h1>
+          <button className="header-action-btn">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            Report Issue
+          </button>
+        </header>
+
+        <section className="content-canvas">
+          {/* TOP ROW: KPI CARDS */}
+          <div className="metrics-grid">
+            <div className="metric-card">
+              <span className="metric-label">Total Issues</span>
+              <AnimatedCounter end={121} className="metric-value" />
             </div>
-
-            <div className="form-row">
-              <div className="input-group">
-                <label>Equipment / Machine Name</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Filler Line 3, Conveyor B"
-                  value={equipment}
-                  onChange={(e) => setEquipment(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="input-group">
-                <label>Date Raised</label>
-                <input
-                  type="date"
-                  value={dateRaised}
-                  onChange={(e) => setDateRaised(e.target.value)}
-                  required
-                />
-              </div>
+            <div className="metric-card">
+              <span className="metric-label">Critical Issues</span>
+              <AnimatedCounter end={5} className="metric-value critical-text" />
             </div>
+            <div className="metric-card">
+              <span className="metric-label">Open Issues</span>
+              <AnimatedCounter end={44} className="metric-value" />
+            </div>
+            <div className="metric-card">
+              <span className="metric-label">Resolved Issues</span>
+              <AnimatedCounter end={77} className="metric-value" />
+            </div>
+          </div>
 
-            <div className="form-row">
-              <div className="input-group">
-                <label>Tag Type</label>
-                <div className="radio-group">
-                  <label>
-                    <input
-                      type="radio"
-                      value="Mechanical"
-                      checked={tagType === "Mechanical"}
-                      onChange={(e) => setTagType(e.target.value)}
-                    />{" "}
-                    Mechanical
-                  </label>
-                  <label>
-                    <input
-                      type="radio"
-                      value="Electrical"
-                      checked={tagType === "Electrical"}
-                      onChange={(e) => setTagType(e.target.value)}
-                    />{" "}
-                    Electrical
-                  </label>
-                  <label>
-                    <input
-                      type="radio"
-                      value="Safety"
-                      checked={tagType === "Safety"}
-                      onChange={(e) => setTagType(e.target.value)}
-                    />{" "}
-                    Safety
-                  </label>
-                </div>
+          {/* BOTTOM ROW: CHARTS */}
+          <div className="charts-grid">
+            {/* BAR CHART */}
+            <div className="chart-panel bar-panel">
+              <div className="chart-header">
+                <h2>Issues by status</h2>
+                <p>Distribution across workflow stages</p>
               </div>
-              <div className="input-group">
-                <label>Priority Level</label>
-                <select
-                  value={priority}
-                  onChange={(e) => setPriority(e.target.value)}
-                >
-                  <option value="Low">Low - Monitor</option>
-                  <option value="Medium">Medium - Requires Maintenance</option>
-                  <option value="High">High - Impeding Production</option>
-                  <option value="Critical">Critical - Safety/Line Stop</option>
-                </select>
-              </div>
-            </div>
+              <div className="chart-wrapper">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={statusData}
+                    margin={{ top: 20, right: 0, left: -20, bottom: 0 }}
+                  >
+                    {/* Inject the pattern directly into the BarChart's SVG namespace */}
+                    <defs>
+                      <pattern
+                        id="pattern-bar"
+                        patternUnits="userSpaceOnUse"
+                        width="6"
+                        height="6"
+                        patternTransform="rotate(45)"
+                      >
+                        <rect
+                          width="6"
+                          height="6"
+                          fill="#ffffff"
+                          fillOpacity="0.05"
+                        />
+                        <line
+                          x1="0"
+                          y1="0"
+                          x2="0"
+                          y2="6"
+                          stroke="#ffffff"
+                          strokeOpacity="0.25"
+                          strokeWidth="2"
+                        />
+                      </pattern>
+                    </defs>
 
-            <div className="input-group">
-              <label>Description of Fault</label>
-              <textarea
-                placeholder="Describe the exact issue..."
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                rows="3"
-                required
-              ></textarea>
-            </div>
-
-            <div className="input-group">
-              <label>Description of Action to be Taken</label>
-              <textarea
-                placeholder="What steps need to be taken to resolve this? (Optional)"
-                value={actionToBeTaken}
-                onChange={(e) => setActionToBeTaken(e.target.value)}
-                rows="2"
-              ></textarea>
-            </div>
-
-            {/* --- VISUAL UPLOAD ZONE --- */}
-            <div className="input-group">
-              <label>Photographic Evidence (Optional)</label>
-
-              {!imagePreview ? (
-                <div
-                  className={`drop-zone ${isDragging ? "drag-active" : ""}`}
-                  onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
-                  onDrop={handleDrop}
-                  onClick={() => fileInputRef.current.click()}
-                >
-                  <div className="drop-zone-content">
-                    <span
-                      style={{
-                        fontSize: "2rem",
-                        marginBottom: "8px",
-                        display: "block",
+                    <XAxis
+                      dataKey="name"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: "#888", fontSize: 12 }}
+                      dy={10}
+                    />
+                    <YAxis
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: "#555", fontSize: 12 }}
+                    />
+                    <Tooltip
+                      cursor={{ fill: "rgba(255,255,255,0.05)" }}
+                      contentStyle={{
+                        backgroundColor: "#111",
+                        border: "1px solid #333",
+                        borderRadius: "6px",
                       }}
-                    ></span>
-                    <p>
-                      Drag & Drop an image here, or{" "}
-                      <strong>click to browse</strong>.
-                    </p>
-                    <p style={{ fontSize: "0.8rem", color: "#666" }}>
-                      Mobile users: Click to activate camera or gallery.
-                    </p>
-                  </div>
-                  {/* Hidden input */}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileInput}
-                    ref={fileInputRef}
-                    style={{ display: "none" }}
-                  />
+                      itemStyle={{ color: "#fff" }}
+                    />
+
+                    <Bar
+                      dataKey="count"
+                      fill="url(#pattern-bar)"
+                      radius={[4, 4, 0, 0]}
+                      barSize={40}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* DONUT CHART */}
+<div className="chart-panel donut-panel">
+  <div className="chart-header">
+    <h2>Severity Distribution</h2>
+    <p>Breakdown by severity level</p>
+  </div>
+  
+  <div className="chart-wrapper">
+    <ResponsiveContainer width="100%" height="100%">
+      <PieChart>
+        {/* Your <defs> and <Pie> code stays exactly the same here */}
+        <defs>
+          <pattern id="pattern-low" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)">
+            <rect width="6" height="6" fill="#4ade80" fillOpacity="0.08" />
+            <line x1="0" y1="0" x2="0" y2="6" stroke="#4ade80" strokeOpacity="0.35" strokeWidth="2" />
+          </pattern>
+          <pattern id="pattern-medium" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)">
+            <rect width="6" height="6" fill="#facc15" fillOpacity="0.08" />
+            <line x1="0" y1="0" x2="0" y2="6" stroke="#facc15" strokeOpacity="0.35" strokeWidth="2" />
+          </pattern>
+          <pattern id="pattern-high" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)">
+            <rect width="6" height="6" fill="#fb923c" fillOpacity="0.08" />
+            <line x1="0" y1="0" x2="0" y2="6" stroke="#fb923c" strokeOpacity="0.35" strokeWidth="2" />
+          </pattern>
+          <pattern id="pattern-critical" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)">
+            <rect width="6" height="6" fill="#ef4444" fillOpacity="0.08" />
+            <line x1="0" y1="0" x2="0" y2="6" stroke="#ef4444" strokeOpacity="0.35" strokeWidth="2" />
+          </pattern>
+        </defs>
+
+        <Pie data={severityData} cx="50%" cy="50%" innerRadius={65} outerRadius={90} paddingAngle={4} dataKey="value" stroke="none">
+          {severityData.map((entry, index) => (
+            <Cell key={`cell-${index}`} fill={`url(#${entry.patternId})`} />
+          ))}
+        </Pie>
+        <Tooltip contentStyle={{ backgroundColor: '#111', border: '1px solid #333', borderRadius: '6px' }} itemStyle={{ color: '#fff' }} />
+      </PieChart>
+    </ResponsiveContainer>
+  </div>
+
+  {/* --- NEW CUSTOM LEGEND --- */}
+  <div className="donut-legend">
+    {severityData.map((entry, index) => {
+      // Map the pattern ID back to its raw hex color for the solid dot
+      const colorMap = {
+        'pattern-low': '#4ade80ab',
+        'pattern-medium': '#facc15a2',
+        'pattern-high': '#fb923cbb',
+        'pattern-critical': '#ef4444ab'
+      };
+      
+      return (
+        <div key={index} className="legend-item">
+          <span className="legend-dot" style={{ backgroundColor: colorMap[entry.patternId] }}></span>
+          <span className="legend-label">{entry.name}</span>
+        </div>
+      );
+    })}
+  </div>
+</div>
+          </div>
+          {/* ISSUES LIST */}
+          <div className="data-explorer-section">
+            {/* SEARCH & CONTROLS */}
+            <div className="explorer-controls">
+              <div className="search-bar-wrapper">
+                <svg
+                  className="search-icon"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input
+                  type="text"
+                  placeholder="Search issues by ID or Title..."
+                  className="search-input"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+
+              <div className="view-toggles">
+                <button
+                  className={`toggle-btn ${viewMode === "list" ? "active" : ""}`}
+                  onClick={() => setViewMode("list")}
+                >
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                  </svg>
+                </button>
+                <button
+                  className={`toggle-btn ${viewMode === "column" ? "active" : ""}`}
+                  onClick={() => setViewMode("column")}
+                >
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <rect x="3" y="3" width="7" height="18" rx="1"></rect>
+                    <rect x="14" y="3" width="7" height="18" rx="1"></rect>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div className="explorer-content">
+              {viewMode === "column" ? (
+                /* --- COLUMN (KANBAN) VIEW --- */
+                <div className="kanban-board">
+                  {statuses.map((status) => {
+                    // Filter issues for this specific column
+                    const columnIssues = filteredIssues.filter(
+                      (i) => i.status === status,
+                    );
+                    // Determine dot color dynamically
+                    const dotClass = `status-dot dot-${status.toLowerCase().replace(" ", "-")}`;
+
+                    return (
+                      <div key={status} className="kanban-column">
+                        <div className="kanban-column-header">
+                          <div className="header-left">
+                            <span className={dotClass}></span>
+                            <h4>{status}</h4>
+                          </div>
+                          <span className="issue-count">
+                            {columnIssues.length}
+                          </span>
+                        </div>
+
+                        <div className="kanban-column-body">
+                          {columnIssues.length > 0 ? (
+                            columnIssues.map((issue) => (
+                              <IssueCard key={issue.id} issue={issue} />
+                            ))
+                          ) : (
+                            <div className="empty-column-state">
+                              No issues under this stage
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               ) : (
-                <div className="image-preview-container">
-                  <img
-                    src={imagePreview}
-                    alt="Preview"
-                    className="image-preview"
-                  />
-                  <button
-                    type="button"
-                    className="remove-image-btn"
-                    onClick={clearImage}
-                  >
-                    Remove Image
-                  </button>
+                /* --- LIST VIEW --- */
+                <div className="list-view-container">
+                  <table className="list-view-table">
+                    <thead>
+                      <tr>
+                        <th>ID</th>
+                        <th>Title</th>
+                        <th>Status</th>
+                        <th>Priority</th>
+                        <th>Created</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredIssues.map((issue) => (
+                        <tr key={issue.id}>
+                          <td className="list-id">{issue.id}</td>
+                          <td className="list-title">{issue.title}</td>
+                          <td>
+                            <span
+                              className={`status-badge stat-${issue.status.toLowerCase().replace(" ", "-")}`}
+                            >
+                              {issue.status}
+                            </span>
+                          </td>
+                          <td>
+                            <span
+                              className={`severity-badge severity-${issue.severity.toLowerCase()}`}
+                            >
+                              {issue.severity}
+                            </span>
+                          </td>
+                          <td className="list-date">
+                            {new Date(issue.createdAt).toLocaleDateString()}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               )}
             </div>
-
-            <button
-              type="submit"
-              className="submit-issue-btn"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? "Transmitting..." : "Attach Tag to Database"}
-            </button>
-          </form>
-        </section>
-
-        <section className="feed-section">
-          <h3 className="feed-title">Active Reports</h3>
-          <div className="fault-list">
-            {faults.length === 0 ? (
-              <p className="empty-state">
-                No issues currently logged for this operator.
-              </p>
-            ) : (
-              faults.map((fault) => (
-                <div key={fault._id} className="fault-card">
-                  <div className="fault-card-header">
-                    <span
-                      className={`status-badge ${fault.status.toLowerCase().replace(" ", "-")}`}
-                    >
-                      {fault.status}
-                    </span>
-                    <span className="timestamp">
-                      {new Date(
-                        fault.dateRaised || fault.createdAt,
-                      ).toLocaleDateString()}{" "}
-                      — {fault.shift} Shift
-                    </span>
-                  </div>
-                  <div className="fault-card-body">
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "baseline",
-                      }}
-                    >
-                      <h4 className="equipment-title">
-                        {fault.equipment}{" "}
-                        <span
-                          style={{
-                            fontSize: "0.8rem",
-                            color: "#888",
-                            fontWeight: "normal",
-                          }}
-                        >
-                          | {fault.area}
-                        </span>
-                      </h4>
-                      <span
-                        style={{
-                          fontSize: "0.85rem",
-                          color: "#bbb",
-                          border: "1px solid #444",
-                          padding: "2px 8px",
-                          borderRadius: "4px",
-                        }}
-                      >
-                        {fault.tagType} Tag
-                      </span>
-                    </div>
-                    <p className="fault-desc" style={{ marginTop: "8px" }}>
-                      {fault.description}
-                    </p>
-
-                    {/* Render the image if it exists */}
-                    {fault.imageUrl && (
-                      <div className="feed-image-container">
-                        <img
-                          src={fault.imageUrl}
-                          alt="Fault Evidence"
-                          className="feed-image"
-                        />
-                      </div>
-                    )}
-
-                    {fault.actionToBeTaken && (
-                      <div
-                        style={{
-                          marginTop: "12px",
-                          padding: "10px",
-                          backgroundColor: "rgba(0,0,0,0.3)",
-                          borderRadius: "6px",
-                          borderLeft: "3px solid #4ade80",
-                        }}
-                      >
-                        <span
-                          style={{
-                            fontSize: "0.8rem",
-                            color: "#4ade80",
-                            textTransform: "uppercase",
-                            fontWeight: "bold",
-                          }}
-                        >
-                          Action Required:
-                        </span>
-                        <p
-                          style={{
-                            margin: "4px 0 0 0",
-                            fontSize: "0.9rem",
-                            color: "#ddd",
-                          }}
-                        >
-                          {fault.actionToBeTaken}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                  <div className="fault-card-footer">
-                    <span
-                      className={`priority-indicator ${fault.priority.toLowerCase()}`}
-                    >
-                      <span className="dot"></span> {fault.priority} Priority
-                    </span>
-                  </div>
-                </div>
-              ))
-            )}
           </div>
         </section>
       </main>
